@@ -12,13 +12,14 @@ unsigned int turn = 0;
 unsigned short int numberWindGenerator = 0;
 unsigned short int numberSolarPanel = 0;
 
-float money = 3000;
+float money = 3000000;
 float priceCell = 1000;
-
+WeatherConditions randomWeather = SUNNY;
+unsigned short int randomWind = 15;
 
 int main(){
-    GameScreen screen = GAMEPLAY;
 
+    GameScreen screen = GAMEPLAY;
     const int screenWidth = 800;
     const int screenHeight = 800;
     int cellWidth = screenHeight / COLS;
@@ -49,8 +50,8 @@ int main(){
     //Main while loop
     while(!WindowShouldClose()) 
     {   
-        CalculateEntities();
 
+        CalculateEntities();
         Vector2 mousePosition = GetMousePosition();
 
         
@@ -77,7 +78,7 @@ int main(){
         {
             int indexI = mousePosition.x / cellWidth;
             int indexJ = mousePosition.y / cellHeight;
-            if(IsIndexValid(indexI, indexJ) && inMenu == false && grid[indexI][indexJ].isInactive == false)
+            if(IsIndexValid(indexI, indexJ) && inMenu == false && grid[indexI][indexJ].isInactive == false && !IsBorderingLockedCellsOnly(indexI, indexJ))
             {
                     CellPanel(indexI, indexJ);
                     justExitedMenu = false;

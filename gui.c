@@ -5,9 +5,18 @@ bool IsIndexValid(int i, int j)
    return i >= 0 && i < COLS && j >= 0 && j < ROWS;
 }
 
+bool IsBorderingLockedCellsOnly(int i, int j)
+{   
+    bool top = (i > 0)      ? !grid[i-1][j].isUnlocked : true;
+    bool bottom = (i < 15)  ? !grid[i+1][j].isUnlocked : true;
+    bool left = (j > 0)     ? !grid[i][j-1].isUnlocked : true;
+    bool right = (j < 15)   ? !grid[i][j+1].isUnlocked : true; 
+    return top && bottom && left && right;
+}
+
 bool isAffordable(float costs)
 {
-    return money-costs > 0;
+    return money-costs >= 0;
 }
 
 void ButtonMenu(void)
@@ -31,7 +40,7 @@ void ButtonMenu(void)
         turnShow = false;
 
         GuiPanel(panelBox, "info");
-        DrawText(TextFormat("Weather: \nWind Speed: "), 0, 25, 20, GRAY);
+        DrawText(TextFormat("Weather: %s\nWind Speed: %hu", WeatherToString(randomWeather), randomWind), 0, 25, 20, GRAY);
         DrawText(TextFormat("Number of Solar Panels: %d\nNumber of Wind Generators: %d\n", numberSolarPanel, numberWindGenerator), 450, 25, 20, GRAY);
         statePanelButton = GuiButton(panelBoxButton, "Close");
         if(statePanelButton)

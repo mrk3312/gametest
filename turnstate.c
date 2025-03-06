@@ -1,21 +1,57 @@
 #include "game.h"
 
-int GenerateNumber(int maxNumber)
+WeatherConditions GenerateNumber(int maxNumber)
 {
-    srand(time(NULL) ^ GetCurrentProcessId());
+    //srand(time(NULL) ^ GetCurrentProcessId());
     int randomNumber = rand() % maxNumber;
     return randomNumber;
 }
+
+const char* WeatherToString(WeatherConditions randomWeather)
+{
+    switch(randomWeather) {
+        case SUNNY:
+        {
+            return "SUNNY";
+            break;
+        }
+        case CLOUDY:
+        {
+            return "CLOUDY";
+            break;
+        }
+        case STORMY:
+        {
+            return "STORMY";
+            break;
+        }
+        case RAINY:
+        {
+            return "RAINY";
+            break;
+        }
+        case FOGGY:
+        {
+            return "FOGGY";
+            break;
+        }
+        case DRIZZLY:
+        {
+            return "DRIZZLY";
+            break;
+        }
+    }
+
+}
+
 
 void EndTurn(void)
 {
     float buildingProducedEnergy = 0;
     float totalProducedEnergy = 0;
     float sunlightHours = 5;
-    float averageWind = 10;
+    int panelPower = 0;
 
-    int randomWeather = GenerateNumber(6);
-    int panelPower;
     switch(randomWeather)
     {
         case SUNNY:
@@ -62,7 +98,7 @@ void EndTurn(void)
                 }
                 else if(grid[i][j].building == WINDGENERATOR)
                 {
-                    buildingProducedEnergy = ((1.225 * 78.54 * pow(averageWind, 3) * 0.15) / 2);
+                    buildingProducedEnergy = ((1.225 * 78.54 * ((float)pow(randomWind, 3)) * 0.15) / 2);
                 }
                 totalProducedEnergy+=buildingProducedEnergy;
             }
@@ -72,6 +108,9 @@ void EndTurn(void)
 
     float income = (totalProducedEnergy/1000) * 0.32;
     money+=income;
+
+    randomWind = GenerateNumber(22);
+    randomWeather = GenerateNumber(6);
 }
 
 void CalculateEntities(void)

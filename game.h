@@ -7,7 +7,6 @@
 #include <string.h>
 #include <raylib.h>
 #include <time.h>
-#include <windows.h>
 #include "raygui.h"
 #include "cJSON.h"
 
@@ -34,6 +33,8 @@ typedef struct Cell
 } Cell;
 
 extern Cell grid[COLS][ROWS];
+extern WeatherConditions randomWeather;
+extern unsigned short int randomWind;
 extern unsigned short int numberWindGenerator;
 extern unsigned short int numberSolarPanel;
 extern bool inMenu;
@@ -49,6 +50,7 @@ extern float priceCell;
 void CellDraw(Cell*, int, int);
 void CellPaint(Cell*, int, int);
 bool IsIndexValid(int, int);
+bool IsBorderingLockedCellsOnly(int, int);
 void CellPanel(int, int);
 void BoxMenu(Cell*);
 void ButtonMenu(void);
@@ -56,5 +58,7 @@ void ButtonMenu(void);
 // Related to Back End
 void EndTurn(void);
 void CalculateEntities(void);
+WeatherConditions GenerateNumber(int);
+const char* WeatherToString(WeatherConditions);
 
 #endif
