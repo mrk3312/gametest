@@ -1,5 +1,10 @@
 #include "game.h"
 
+void ResetButton(PressedButton *button)
+{
+    *button = WAITING;
+}
+
 const char* BuildingToString(Cell *cell)
 {
     switch(cell->building)
@@ -27,6 +32,7 @@ const char* BuildingToString(Cell *cell)
     }
     return "Building Unknown";
 }
+
 
 int CalculateMousePosition(int mPos, int cellDimension)
 {
@@ -112,7 +118,7 @@ void ButtonMenu(void)
 
 }
 
-void CellPanel(int i, int j)
+void EnterCellMenu(int i, int j)
 {       
         grid[i][j].isSelected = true;
         inMenu = true;
@@ -124,7 +130,16 @@ bool HasEnoughCC(int usedConstructionCapabilities, int requiredConstructionCapab
     return usedConstructionCapabilities>=requiredConstructionCapabilities;
 }
 
-void BoxMenu(int i, int j)
+void ExitCellMenu(Cell *cell, PressedButton *button, MenuState *menuState)
+{
+    *menuState = NONE;
+    inMenu = false;
+    justExitedMenu = true;
+    cell->isSelected = false;
+    ResetButton(button);
+}
+
+void CellMenu(int i, int j)
 {
     Cell *cell = &grid[i][j];
     static MenuState menuState = NONE;
@@ -132,8 +147,10 @@ void BoxMenu(int i, int j)
     static PressedButton stateButtonMenu02 = WAITING;
     static PressedButton stateButtonMenu03 = WAITING;
 
-    Rectangle msgBoxRect = {300, 0, 200, 100};
-    (cell->i > 4 && cell->i < 12 && cell->j > 4 && cell->j < 12) ? (msgBoxRect.y = 50) : (msgBoxRect.y = 350);
+    Rectangle msgBoxRect = {250, 0, 300, 150};
+    Rectangle upgradeRect01 = {460, 0, 75, 20};
+    Rectangle upgradeRect02 = {460, 0, 75, 20};
+    (cell->i > 4 && cell->i < 12 && cell->j > 4 && cell->j < 12) ? (msgBoxRect.y = 50, upgradeRect01.y = 110, upgradeRect02.y = 140) : (msgBoxRect.y = 350, upgradeRect01.y = 410, upgradeRect02.y = 440);
 
     if(cell->isUnlocked && cell->building == EMPTY && !justExitedMenu)
     {
@@ -150,9 +167,7 @@ void BoxMenu(int i, int j)
                 stateButtonMenu01 = GuiMessageBox(msgBoxRect, "Info", "Building: Empty", "Build");
                 if(stateButtonMenu01 == EXIT)
                 {
-                    inMenu = false;
-                    menuState = NONE;
-                    cell->isSelected = false;
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
                 }
                 else if (stateButtonMenu01 == BUTTON01)
                     menuState = MENU02;
@@ -163,8 +178,7 @@ void BoxMenu(int i, int j)
                 stateButtonMenu02 = GuiMessageBox(msgBoxRect, "Build Panel", "What would you like to build?", "Solar Panel;Wind Generator");
                 if(stateButtonMenu02 == EXIT)
                 {
-                    inMenu = false;
-                    cell->isSelected = false;
+                    ExitCellMenu(cell, &stateButtonMenu02, &menuState);
                 }
                 else if(stateButtonMenu02 == BUTTON01 || stateButtonMenu02 == BUTTON02)
                     menuState = MENU03;
@@ -190,9 +204,7 @@ void BoxMenu(int i, int j)
                     }
                     else if(stateButtonMenu03 == EXIT || stateButtonMenu03 == BUTTON02)
                     {
-                        menuState = NONE;
-                        inMenu = false;
-                        cell->isSelected = false;
+                        ExitCellMenu(cell, &stateButtonMenu03, &menuState);
                     }
                 }
                 else if(stateButtonMenu02 == BUTTON02)
@@ -205,18 +217,14 @@ void BoxMenu(int i, int j)
                         {
                             usedConstructionCapabilities-=500;
                             cell->building = CONSTRUCTING_WINDGENERATOR;
-                            inMenu = false;
-                            menuState = NONE;
-                            cell->isSelected = false;
+                            ExitCellMenu(cell, &stateButtonMenu03, &menuState);
                         }
                         else
                             menuState = MENU04;
                     }
                     else if(stateButtonMenu03 == EXIT || stateButtonMenu03 == BUTTON02)
                     {
-                        inMenu = false;
-                        menuState = NONE;
-                        cell->isSelected = false;
+                        ExitCellMenu(cell, &stateButtonMenu03, &menuState);
                     }               
                 }
                 break;
@@ -226,9 +234,7 @@ void BoxMenu(int i, int j)
                 stateButtonMenu01 = GuiMessageBox(msgBoxRect, "Build Panel", "Not enough\nConstruction Capabilities", "OK");
                 if(stateButtonMenu01 == EXIT || stateButtonMenu01 == BUTTON01)
                 {
-                    inMenu = false;
-                    menuState = NONE;
-                    cell->isSelected = false;
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
                 }
                 break;
             }
@@ -255,11 +261,8 @@ void BoxMenu(int i, int j)
                         money-=priceCell;
                         priceCell+=500;
 
-                        inMenu = false; 
-                        justExitedMenu = true;
                         cell->isUnlocked = true;
-                        menuState = NONE;
-                        cell->isSelected = false;
+                        ExitCellMenu(cell, &stateButtonMenu01, &menuState);
                     }            
                     else
                     {
@@ -268,10 +271,7 @@ void BoxMenu(int i, int j)
                 }
                 else if(stateButtonMenu01 == EXIT)
                 {
-                    inMenu = false;  
-                    justExitedMenu = true;  
-                    menuState = NONE;
-                    cell->isSelected = false;       
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);    
                 }
                 break;
             }
@@ -281,10 +281,7 @@ void BoxMenu(int i, int j)
                 
                 if(stateButtonMenu02 == EXIT || stateButtonMenu02 == BUTTON01)
                 {
-                    inMenu = false;  
-                    justExitedMenu = true;  
-                    menuState = NONE;
-                    cell->isSelected = false;  
+                    ExitCellMenu(cell, &stateButtonMenu02, &menuState);
                 }
                 break;
             }
@@ -309,61 +306,73 @@ void BoxMenu(int i, int j)
 
             case MENU01:
             {
-                stateButtonMenu01 = GuiMessageBox(msgBoxRect, "Info", TextFormat("Building: %s\n", BuildingToString(cell)), "Destroy");
+                stateButtonMenu01 = GuiMessageBox(msgBoxRect, "Info", TextFormat("Building: %s\n\nEfficiency: Level %d\n\nReliability: Level %d", BuildingToString(cell), cell->efficiencyLevel, cell->reliabilityLevel), "Destroy");
+                if(cell->efficiencyLevel < 5)
+                    stateButtonMenu02 = GuiButton(upgradeRect01, "Upgrade");
+                if(cell->reliabilityLevel < 5)
+                    stateButtonMenu03 = GuiButton(upgradeRect02, "Upgrade");
 
-                if(stateButtonMenu01 == EXIT)
+                if(stateButtonMenu01 == EXIT || stateButtonMenu01 == BUTTON02)
                 {
-                    inMenu = false;
-                    cell->isSelected = false;
-                    menuState = NONE;
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
                 }
                 else if (stateButtonMenu01 == BUTTON01)
                     menuState = MENU02;
+                
+                if(stateButtonMenu02 == BUTTON01 && cell->efficiencyLevel < 5)
+                {
+                    menuState = MENU03;
+                }
+                if(stateButtonMenu03 == BUTTON01 && cell->reliabilityLevel < 5)
+                {
+                    menuState = MENU04;
+                }
                 break;
             }
 
             case MENU02:
             {
-                stateButtonMenu03 = GuiMessageBox(msgBoxRect, "Destroy Panel", TextFormat("Are you sure you want\nto destroy the %s?", BuildingToString(cell)), "Yes;Cancel");
+                stateButtonMenu01 = GuiMessageBox(msgBoxRect, "Destroy Panel", TextFormat("Are you sure you want\nto destroy the %s?", BuildingToString(cell)), "Yes;Cancel");
 
-                if(stateButtonMenu03 == EXIT || stateButtonMenu03 == BUTTON02)
+                if(stateButtonMenu01 == EXIT || stateButtonMenu01 == BUTTON02)
                 {
-                    inMenu = false;
-                    cell->isSelected = false;
-                    menuState = NONE;
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
                 }
-                else if(stateButtonMenu03 == BUTTON01)
+                else if(stateButtonMenu01 == BUTTON01)
                 {
                     RemoveBuilding(cell);
-                    inMenu = false;
-                    justExitedMenu = true;
-                    cell->building = EMPTY;
-                    cell->isSelected = false;
-                    menuState = NONE;
-            }
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
+                }
+                
             break;
             }
             case MENU03:
+            {
+                stateButtonMenu02 = GuiMessageBox(msgBoxRect, "Upgrade Efficiency", TextFormat("Do you want to upgrade\nthe efficiency of this %s\nfrom Level %d to Level %d for $$$$", BuildingToString(cell), cell->efficiencyLevel, cell->efficiencyLevel + 1), "Yes;Cancel");
+                if(stateButtonMenu02 == EXIT || stateButtonMenu02 == BUTTON02)
+                {
+                    ExitCellMenu(cell, &stateButtonMenu02, &menuState);
+                }
+                else if(stateButtonMenu02 == BUTTON01)
+                {
+                    cell->efficiencyLevel++;
+                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
+                }
+                break;
+            }
             case MENU04:
             {
-                return;
+                stateButtonMenu03 = GuiMessageBox(msgBoxRect, "Upgrade Reliability", TextFormat("Do you want to upgrade\nthe reliability of this %s\nfrom Level %d to Level %d for $$$$", BuildingToString(cell), cell->reliabilityLevel, cell->reliabilityLevel + 1), "Yes;Cancel");
+                if(stateButtonMenu03 == EXIT || stateButtonMenu02 == BUTTON02)
+                {
+                    ExitCellMenu(cell, &stateButtonMenu03, &menuState);
+                }
+                else if(stateButtonMenu03 == BUTTON01)
+                {
+                    cell->reliabilityLevel++;
+                    ExitCellMenu(cell, &stateButtonMenu03, &menuState);
+                }
                 break;
-            }
-        }
-    }
-    else if(cell->building == CONSTRUCTING_SOLARPANEL || cell->building == CONSTRUCTING_WINDGENERATOR)
-    {
-        switch(menuState)
-        {
-            case NONE:
-            {
-                menuState = MENU01;
-                inMenu = true;
-                break;
-            }
-            case MENU01:
-            {
-
             }
         }
     }

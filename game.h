@@ -7,8 +7,8 @@
 #include <string.h>
 #include <raylib.h>
 #include <time.h>
-#include "extern\raygui.h"
-#include "extern\cJSON.h"
+#include "raygui.h"
+#include "cJSON.h"
 
 
 #define COLS 16
@@ -19,6 +19,7 @@ typedef enum MenuState {NONE, MENU01, MENU02, MENU03, MENU04} MenuState;
 typedef enum PressedButton {WAITING = -1, EXIT, BUTTON01, BUTTON02} PressedButton;
 typedef enum GameScreen {MAINMENU, GAMEPLAY} GameScreen;
 typedef enum BuildingType {EMPTY, CONSTRUCTING_SOLARPANEL, CONSTRUCTING_WINDGENERATOR, SOLARPANEL, WINDGENERATOR} BuildingType;
+typedef enum BuildingLevel {LEVEL00, LEVEL01, LEVEL02, LEVEL03, LEVEL04, LEVEL05} BuildingLevel;
 typedef enum WeatherConditions {SUNNY, CLOUDY, STORMY, FOGGY, RAINY, DRIZZLY} WeatherConditions;
 
 typedef struct Cell
@@ -29,6 +30,8 @@ typedef struct Cell
     bool isUnlocked;
     bool isSelected;
     BuildingType building;
+    BuildingLevel efficiencyLevel;
+    BuildingLevel reliabilityLevel;
     short int turnsConstructing;
 } Cell;
 
@@ -49,13 +52,15 @@ extern int constructionCapabilities;
 extern int usedConstructionCapabilities;
 
 //gui.c
+void EnterCellMenu(int, int);
+void CellMenu(int, int);
+void ExitCellMenu(Cell*, PressedButton*, MenuState*);
+const char* BuildingToString(Cell*);
 int CalculateMousePosition(int, int);
 bool IsIndexValid(int, int);
 bool IsBorderingLockedCellsOnly(int, int);
 bool IsAffordable(float);
 bool HasEnoughCC(int, int);
-void CellPanel(int, int);
-void BoxMenu(int, int);
 void ButtonMenu(void);
 void RemoveBuilding(Cell*);
 

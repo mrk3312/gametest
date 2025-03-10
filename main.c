@@ -42,6 +42,8 @@ int main(){
                 .isInactive = (j == 0 || j == 1),
                 .isUnlocked = (i > 6 && i < 9 && j > 7 && j < 10),
                 .building = EMPTY,
+                .efficiencyLevel = LEVEL00,
+                .reliabilityLevel = LEVEL00,
                 .turnsConstructing = 0,
             };
         }
@@ -80,7 +82,7 @@ int main(){
             indexJ = CalculateMousePosition(mousePosition.y, cellHeight);
             if(IsIndexValid(indexI, indexJ) && !inMenu && !grid[indexI][indexJ].isInactive && !IsBorderingLockedCellsOnly(indexI, indexJ))
             {
-                    CellPanel(indexI, indexJ);
+                    EnterCellMenu(indexI, indexJ);
             }
         } 
         
@@ -114,7 +116,7 @@ int main(){
                         }
                     }
                     if(grid[indexI][indexJ].isSelected)
-                        BoxMenu(indexI, indexJ);
+                        CellMenu(indexI, indexJ);
                 }
                 DrawText(TextFormat("X: %f\nY: %f", mousePosition.x, mousePosition.y), 500, 500, 50, BLACK);   
                 break;

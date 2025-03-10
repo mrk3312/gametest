@@ -52,6 +52,8 @@ void UpdateConstruction(int i, int j, const int requiredConstructionCapabilities
         if(cell->turnsConstructing == ConstructionTurns - 1)
         {
             cell->building = building;
+            cell->efficiencyLevel = LEVEL01;
+            cell->reliabilityLevel = LEVEL01;
             cell->turnsConstructing = 0;
             usedConstructionCapabilities+=requiredConstructionCapabilities;
         }
