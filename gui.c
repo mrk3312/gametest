@@ -29,6 +29,14 @@ const char* BuildingToString(Cell *cell)
         {
             return "Constructing Wind Generator";
         }
+        case UPGRADING_SOLARPANEL:
+        {
+            return "Upgrading Solar Panel";
+        }
+        case UPGRADING_WINDGENERATOR:
+        {
+            return "Upgrading Wind Generator";
+        }
     }
     return "Building Unknown";
 }
@@ -59,6 +67,8 @@ void RemoveBuilding(Cell *cell)
         case EMPTY:
         case CONSTRUCTING_SOLARPANEL:
         case CONSTRUCTING_WINDGENERATOR:
+        case UPGRADING_SOLARPANEL:
+        case UPGRADING_WINDGENERATOR:
             return;
     }
 }
@@ -355,8 +365,17 @@ void CellMenu(int i, int j)
                 }
                 else if(stateButtonMenu02 == BUTTON01)
                 {
-                    cell->efficiencyLevel++;
-                    ExitCellMenu(cell, &stateButtonMenu01, &menuState);
+                    const int calculateCC = CalculateConstructionCapabilityCost(i, j, UPGRADING_EFFICIENCY);
+                    if(HasEnoughCC(usedConstructionCapabilities, calculateCC))
+                    {
+                        usedConstructionCapabilities-=calculateCC;
+                        cell->constructionUpgradingStatus = UPGRADING_EFFICIENCY;
+                        if(cell->building == SOLARPANEL)
+                            cell->building = UPGRADING_SOLARPANEL;
+                        else if(cell->building == WINDGENERATOR)
+                            cell->building = UPGRADING_WINDGENERATOR;
+                        ExitCellMenu(cell, &stateButtonMenu01, &menuState);
+                    }
                 }
                 break;
             }
@@ -369,8 +388,17 @@ void CellMenu(int i, int j)
                 }
                 else if(stateButtonMenu03 == BUTTON01)
                 {
-                    cell->reliabilityLevel++;
-                    ExitCellMenu(cell, &stateButtonMenu03, &menuState);
+                    const int calculateCC = CalculateConstructionCapabilityCost(i, j, UPGRADING_RELIABILITY);
+                    if(HasEnoughCC(usedConstructionCapabilities, calculateCC))
+                    {
+                        usedConstructionCapabilities-=calculateCC;
+                        cell->constructionUpgradingStatus = UPGRADING_RELIABILITY;
+                        if(cell->building == SOLARPANEL)
+                            cell->building = UPGRADING_SOLARPANEL;
+                        else if(cell->building == WINDGENERATOR)
+                            cell->building = UPGRADING_WINDGENERATOR;
+                        ExitCellMenu(cell, &stateButtonMenu03, &menuState);
+                    }
                 }
                 break;
             }

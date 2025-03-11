@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <math.h>
@@ -18,7 +19,8 @@
 typedef enum MenuState {NONE, MENU01, MENU02, MENU03, MENU04} MenuState;
 typedef enum PressedButton {WAITING = -1, EXIT, BUTTON01, BUTTON02} PressedButton;
 typedef enum GameScreen {MAINMENU, GAMEPLAY} GameScreen;
-typedef enum BuildingType {EMPTY, CONSTRUCTING_SOLARPANEL, CONSTRUCTING_WINDGENERATOR, SOLARPANEL, WINDGENERATOR} BuildingType;
+typedef enum BuildingType {EMPTY, SOLARPANEL, WINDGENERATOR, CONSTRUCTING_SOLARPANEL, CONSTRUCTING_WINDGENERATOR, UPGRADING_SOLARPANEL, UPGRADING_WINDGENERATOR} BuildingType;
+typedef enum UpgradeStatus {NOTUPGRADING, UPGRADING_EFFICIENCY, UPGRADING_RELIABILITY} UpgradeStatus;
 typedef enum BuildingLevel {LEVEL00, LEVEL01, LEVEL02, LEVEL03, LEVEL04, LEVEL05} BuildingLevel;
 typedef enum WeatherConditions {SUNNY, CLOUDY, STORMY, FOGGY, RAINY, DRIZZLY} WeatherConditions;
 
@@ -32,6 +34,7 @@ typedef struct Cell
     BuildingType building;
     BuildingLevel efficiencyLevel;
     BuildingLevel reliabilityLevel;
+    UpgradeStatus constructionUpgradingStatus; 
     short int turnsConstructing;
 } Cell;
 
@@ -70,7 +73,10 @@ const char* WeatherToString(WeatherConditions);
 void EndTurn(void);
 void CalculateEntities(void);
 void UpdateConstruction(int, int, const int, const int, const BuildingType, const BuildingType);
-bool IsCellConstructing(int, int, const int, const BuildingType);
+void UpgradeConstruction(int, int, const int, const int, const BuildingType, const UpgradeStatus);
+const int CalculateConstructionCapabilityCost(int, int, const UpgradeStatus);
+const int CalculateTurns(int, int, const UpgradeStatus);
+bool IsCellConstructing(Cell*, const int, const BuildingType);
 bool IsCellContainingBuilding(Cell*);
 
 //mapdraw.c

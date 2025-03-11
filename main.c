@@ -42,6 +42,7 @@ int main(){
                 .isInactive = (j == 0 || j == 1),
                 .isUnlocked = (i > 6 && i < 9 && j > 7 && j < 10),
                 .building = EMPTY,
+                .constructionUpgradingStatus = NOTUPGRADING,
                 .efficiencyLevel = LEVEL00,
                 .reliabilityLevel = LEVEL00,
                 .turnsConstructing = 0,
@@ -126,7 +127,6 @@ int main(){
             EndDrawing();
         
     }
-    //closing up the game
 
     CloseWindow();
     return 0;
