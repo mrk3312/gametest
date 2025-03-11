@@ -68,15 +68,16 @@ void ButtonMenu(void);
 void RemoveBuilding(Cell*);
 
 //turnstate.c
-WeatherConditions GenerateNumber(int);
+int GenerateInt(int);
 const char* WeatherToString(WeatherConditions);
 void EndTurn(void);
 void CalculateEntities(void);
 void UpdateConstruction(int, int, const int, const int, const BuildingType, const BuildingType);
-void UpgradeConstruction(int, int, const int, const int, const BuildingType, const UpgradeStatus);
+void UpgradeConstruction(int, int, const int, const int, const UpgradeStatus, const BuildingType, const BuildingType);
 const int CalculateConstructionCapabilityCost(int, int, const UpgradeStatus);
 const int CalculateTurns(int, int, const UpgradeStatus);
 bool IsCellConstructing(Cell*, const int, const BuildingType);
+bool IsCellUpgrading(Cell*, const int, const UpgradeStatus, const BuildingType);
 bool IsCellContainingBuilding(Cell*);
 
 //mapdraw.c
