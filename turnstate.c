@@ -1,9 +1,9 @@
 #include "game.h"
 
-WeatherConditions GenerateNumber(int maxNumber)
+int GenerateInt(int max)
 {
     //srand(time(NULL) ^ GetCurrentProcessId());
-    int randomNumber = rand() % maxNumber;
+    int randomNumber = rand() % max;
     return randomNumber;
 }
 
@@ -43,11 +43,6 @@ bool IsCellConstructing(Cell *cell, const int ConstructionTurns, const BuildingT
     return !cell->isInactive && cell->isUnlocked && cell->turnsConstructing < ConstructionTurns && cell->building == building;
 }
 
-bool IsCellUpgrading(Cell *cell, const int upgradeTurns, const UpgradeStatus upgradeStatus)
-{
-    return !cell->isInactive && cell->isUnlocked && cell->turnsConstructing < upgradeTurns && cell->constructionUpgradingStatus == upgradeStatus;
-}
-
 void UpdateConstruction(int i, int j, const int requiredConstructionCapabilities, const int ConstructionTurns, const BuildingType constructBuilding, const BuildingType building)
 {
     Cell *cell = &grid[i][j];
@@ -67,32 +62,36 @@ void UpdateConstruction(int i, int j, const int requiredConstructionCapabilities
     }
 }
 
-void UpgradeConstruction(int i, int j, const int requiredConstructionCapabilities, const int upgradeTurns, const BuildingType building, const UpgradeStatus typeOfUpgrade)
+bool IsCellUpgrading(Cell *cell, const int upgradeTurns, const UpgradeStatus upgradeStatus, const BuildingType building)
+{
+    return !cell->isInactive && cell->isUnlocked && cell->turnsConstructing < upgradeTurns && cell->constructionUpgradingStatus == upgradeStatus && cell->building == building;
+}
+
+void UpgradeConstruction(int i, int j, const int requiredConstructionCapabilities, const int upgradeTurns, const UpgradeStatus typeOfUpgrade, const BuildingType currentBuilding,  const BuildingType afterFinish)
 {
     Cell *cell = &grid[i][j];
-    if(IsCellUpgrading(cell, upgradeTurns, typeOfUpgrade))
+    if(IsCellUpgrading(cell, upgradeTurns, typeOfUpgrade, currentBuilding))
     {
         if(cell->turnsConstructing == upgradeTurns - 1)
         {
-            cell->building = building;
+            cell->building = afterFinish;
             cell->turnsConstructing = 0;
             usedConstructionCapabilities+=requiredConstructionCapabilities;
+            cell->constructionUpgradingStatus = NOTUPGRADING;
             switch(typeOfUpgrade)
             {
-                case NOTUPGRADING:
-                    break;
                 case UPGRADING_EFFICIENCY:
                 {
                     cell->efficiencyLevel++;
-                    cell->constructionUpgradingStatus = NOTUPGRADING;
                     break;
                 }
                 case UPGRADING_RELIABILITY:
                 {
                     cell->reliabilityLevel++;
-                    cell->constructionUpgradingStatus = NOTUPGRADING;
                     break;
                 }
+                case NOTUPGRADING:
+                    break;
             }
         }
         else
@@ -133,12 +132,12 @@ void CountBuilding(Cell *cell)
 }
 
 
-// Calculate how much Construction capability will the upgrade cost
+// Calculate Construction
 const int CalculateConstructionCapabilityCost(int i, int j, UpgradeStatus typeOfUpgrade)
 {
     Cell *cell = &grid[i][j];
     
-    if(cell->building == SOLARPANEL)
+    if(cell->building == SOLARPANEL || cell->building == UPGRADING_SOLARPANEL)
     {
         switch(typeOfUpgrade)
         {
@@ -148,13 +147,13 @@ const int CalculateConstructionCapabilityCost(int i, int j, UpgradeStatus typeOf
             }
             case UPGRADING_RELIABILITY:
             {
-                return (cell->efficiencyLevel + 1) * 350;
+                return (cell->reliabilityLevel + 1) * 350;
             }
             case NOTUPGRADING:
             break;
         }
     }
-    else if(cell->building == WINDGENERATOR)
+    else if(cell->building == WINDGENERATOR || cell->building == UPGRADING_WINDGENERATOR)
     {
         switch(typeOfUpgrade)
         {
@@ -164,7 +163,7 @@ const int CalculateConstructionCapabilityCost(int i, int j, UpgradeStatus typeOf
             }
             case UPGRADING_RELIABILITY:
             {
-                return (cell->efficiencyLevel + 1) * 550;
+                return (cell->reliabilityLevel + 1) * 550;
             }
             case NOTUPGRADING:
                 break;
@@ -176,7 +175,7 @@ const int CalculateTurns(int i, int j, UpgradeStatus typeOfUpgrade)
 {
     Cell *cell = &grid[i][j];
 
-    if(cell->building == SOLARPANEL)
+    if(cell->building == SOLARPANEL || cell->building == UPGRADING_SOLARPANEL)
     {
         switch(typeOfUpgrade)
         {
@@ -186,13 +185,13 @@ const int CalculateTurns(int i, int j, UpgradeStatus typeOfUpgrade)
             }
             case UPGRADING_RELIABILITY:
             {
-                return (cell->efficiencyLevel + 1) * 4;
+                return (cell->reliabilityLevel + 1) * 4;
             }
             case NOTUPGRADING:
             break;
         }
     }
-    else if(cell->building == WINDGENERATOR)
+    else if(cell->building == WINDGENERATOR || cell->building == UPGRADING_WINDGENERATOR)
     {
         switch(typeOfUpgrade)
         {
@@ -202,7 +201,7 @@ const int CalculateTurns(int i, int j, UpgradeStatus typeOfUpgrade)
             }
             case UPGRADING_RELIABILITY:
             {
-                return (cell->efficiencyLevel + 1) * 6;
+                return (cell->reliabilityLevel + 1) * 6;
             }
             case NOTUPGRADING:
             break;
@@ -228,8 +227,7 @@ void EndTurn(void)
     float buildingProducedEnergy = 0;
     float totalProducedEnergy = 0;
     float sunlightHours = 5;
-    int panelPower = 0;
-
+    float panelPower = 0;
     switch(randomWeather)
     {
         case SUNNY:
@@ -264,43 +262,104 @@ void EndTurn(void)
         }
     }
 
+    float efficiencyBuilding = 0;
+
     for(int i = 0; i < ROWS; i++)
     {
         for(int j = 0; j < COLS; j++)
         {
-            if(grid[i][j].building != EMPTY && grid[i][j].isUnlocked)
+            if(!grid[i][j].isInactive && grid[i][j].isUnlocked && grid[i][j].building != EMPTY)
             {
                 if(grid[i][j].building == SOLARPANEL)
                 {
-                    buildingProducedEnergy = 7 * ((panelPower * 2 * 0.15) * sunlightHours);
+                    switch(grid[i][j].efficiencyLevel)
+                    {
+                        case LEVEL01:
+                        {
+                            efficiencyBuilding = 0.2f;
+                            break;  
+                        }
+                        case LEVEL02:
+                        {
+                            efficiencyBuilding = 0.3f;
+                            break;   
+                        }
+                        case LEVEL03:
+                        {
+                            efficiencyBuilding = 0.38f;
+                            break;    
+                        }
+                        case LEVEL04:
+                        {
+                            efficiencyBuilding = 0.45f;
+                            break;  
+                        }
+                        case LEVEL05:
+                        {
+                            efficiencyBuilding = 0.5f;
+                            break;  
+                        }
+                        case LEVEL00:
+                            return;
+                    }
+                    buildingProducedEnergy = 7.0f * ((panelPower * 2.0f * efficiencyBuilding) * sunlightHours);
                 }
                 else if(grid[i][j].building == WINDGENERATOR)
                 {
-                    buildingProducedEnergy = 7 * ((1.225 * 78.54 * ((float)pow(randomWind, 3)) * 0.15) / 2);
+                    switch(grid[i][j].efficiencyLevel)
+                    {
+                        case LEVEL01:
+                        {
+                            efficiencyBuilding = 0.15f;
+                            break;  
+                        }
+                        case LEVEL02:
+                        {
+                            efficiencyBuilding = 0.25f;
+                            break;   
+                        }
+                        case LEVEL03:
+                        {
+                            efficiencyBuilding = 0.35f;
+                            break;    
+                        }
+                        case LEVEL04:
+                        {
+                            efficiencyBuilding = 0.4f;
+                            break;  
+                        }
+                        case LEVEL05:
+                        {
+                            efficiencyBuilding = 0.45f;
+                            break;  
+                        }
+                        case LEVEL00:
+                            return;
+                    }
+                    buildingProducedEnergy = 7.0f * ((1.225f * 78.54f * ((float)pow(randomWind, 3)) * efficiencyBuilding) / 2.0f);
                 }
                 totalProducedEnergy+=buildingProducedEnergy;
             }
         }
     }
-    
     for(int i = 0; i < ROWS; i++)
     {
         for(int j = 0; j < COLS; j++)
         {
            UpdateConstruction(i, j, 300, 3, CONSTRUCTING_SOLARPANEL, SOLARPANEL);
            UpdateConstruction(i, j, 500, 5, CONSTRUCTING_WINDGENERATOR, WINDGENERATOR);
-           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_EFFICIENCY), CalculateTurns(i, j, UPGRADING_EFFICIENCY), SOLARPANEL, UPGRADING_EFFICIENCY);
-           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_RELIABILITY), CalculateTurns(i, j, UPGRADING_RELIABILITY), SOLARPANEL, UPGRADING_RELIABILITY);
-           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_EFFICIENCY), CalculateTurns(i, j, UPGRADING_EFFICIENCY), WINDGENERATOR, UPGRADING_EFFICIENCY);
-           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_RELIABILITY), CalculateTurns(i, j, UPGRADING_RELIABILITY), WINDGENERATOR, UPGRADING_RELIABILITY);
+           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_EFFICIENCY), CalculateTurns(i, j, UPGRADING_EFFICIENCY), UPGRADING_EFFICIENCY, UPGRADING_SOLARPANEL, SOLARPANEL);
+           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_RELIABILITY), CalculateTurns(i, j, UPGRADING_RELIABILITY), UPGRADING_RELIABILITY, UPGRADING_SOLARPANEL, SOLARPANEL);
+           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_EFFICIENCY), CalculateTurns(i, j, UPGRADING_EFFICIENCY), UPGRADING_EFFICIENCY, UPGRADING_WINDGENERATOR, WINDGENERATOR);
+           UpgradeConstruction(i, j, CalculateConstructionCapabilityCost(i, j, UPGRADING_RELIABILITY), CalculateTurns(i, j, UPGRADING_RELIABILITY), UPGRADING_RELIABILITY, UPGRADING_WINDGENERATOR, WINDGENERATOR);
         }
     }
 
     turn++;
 
-    float income = (totalProducedEnergy/1000) * 0.32;
+    float income = (totalProducedEnergy/1000.0f) * 0.32;
     money+=income;
 
-    randomWind = GenerateNumber(22);
-    randomWeather = GenerateNumber(6);
+    randomWind = GenerateInt(22);
+    randomWeather = GenerateInt(6);
 }

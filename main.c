@@ -17,8 +17,8 @@ float priceCell = 1000;
 WeatherConditions randomWeather = SUNNY;
 unsigned short int randomWind = 15;
 
-int constructionCapabilities = 1000;
-int usedConstructionCapabilities = 1000;
+int constructionCapabilities = 5000;
+int usedConstructionCapabilities = 5000;
 
 int main(){
 
@@ -118,8 +118,7 @@ int main(){
                     }
                     if(grid[indexI][indexJ].isSelected)
                         CellMenu(indexI, indexJ);
-                }
-                DrawText(TextFormat("X: %f\nY: %f", mousePosition.x, mousePosition.y), 500, 500, 50, BLACK);   
+                }  
                 break;
             }
 
