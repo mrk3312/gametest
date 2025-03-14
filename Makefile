@@ -349,59 +349,40 @@ endif
 # Define a recursive wildcard function
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-# Define all source files required
-SRC_DIR = src
+# Directories
+SRC_DIR = code
+EXT_DIR = extern
 OBJ_DIR = obj
 
-# Define all object files from source files
-SRC = $(call rwildcard, ./, *.c, *.h)
-#OBJS = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
-OBJS = $(patsubst %.c,%.o,$(filter %.c,$(SRC)))
+# Find all .c files inside SRC_DIR and EXT_DIR
+SRC = $(wildcard $(SRC_DIR)/*.c)
+EXT = $(wildcard $(EXT_DIR)/*.c)
 
-# For Android platform we call a custom Makefile.Android
-ifeq ($(PLATFORM),PLATFORM_ANDROID)
-    MAKEFILE_PARAMS = -f Makefile.Android
-    export PROJECT_NAME
-    export SRC_DIR
-else
-    MAKEFILE_PARAMS = $(PROJECT_NAME)
-endif
+# Convert .c filenames into .o inside obj/
+OBJS = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRC)) \
+       $(patsubst $(EXT_DIR)/%.c, $(OBJ_DIR)/%.o, $(EXT))
 
-# Default target entry
-# NOTE: We call this Makefile target or Makefile.Android target
-all:
-	$(MAKE) $(MAKEFILE_PARAMS)
+# Compiler settings
+CC = gcc
+CFLAGS = -Wall -I$(EXT_DIR)
 
-# Project target defined by PROJECT_NAME
-$(PROJECT_NAME): $(OBJS)
-	$(CC) -o $(PROJECT_NAME)$(EXT) $(OBJS) $(CFLAGS) $(INCLUDE_PATHS) $(LDFLAGS) $(LDLIBS) -D$(PLATFORM)
+# Executable name
+PROJECT_NAME = main
 
-# Compile source files
-# NOTE: This pattern will compile every module defined on $(OBJS)
-#%.o: %.c
+# Ensure obj/ directory exists before compiling
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE_PATHS) -D$(PLATFORM)
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean everything
+$(OBJ_DIR)/%.o: $(EXT_DIR)/%.c
+	@mkdir -p $(OBJ_DIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Build final executable
+$(PROJECT_NAME): $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) -o $(PROJECT_NAME)
+
+# Clean up
+.PHONY: clean
 clean:
-ifeq ($(PLATFORM),PLATFORM_DESKTOP)
-    ifeq ($(PLATFORM_OS),WINDOWS)
-		del *.o *.exe /s
-    endif
-    ifeq ($(PLATFORM_OS),LINUX)
-	find -type f -executable | xargs file -i | grep -E 'x-object|x-archive|x-sharedlib|x-executable' | rev | cut -d ':' -f 2- | rev | xargs rm -fv
-    endif
-    ifeq ($(PLATFORM_OS),OSX)
-		find . -type f -perm +ugo+x -delete
-		rm -f *.o
-    endif
-endif
-ifeq ($(PLATFORM),PLATFORM_RPI)
-	find . -type f -executable -delete
-	rm -fv *.o
-endif
-ifeq ($(PLATFORM),PLATFORM_WEB)
-	del *.o *.html *.js
-endif
-	@echo Cleaning done
-
+	rm -rf $(OBJ_DIR) $(PROJECT_NAME)
